@@ -1,0 +1,220 @@
+CREATE DATABASE "ash-cafe";
+
+\c "ash-cafe";
+
+CREATE TABLE Users (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    is_admin BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE MenuItems (
+    item_id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description TEXT,
+    price DECIMAL(5,2) NOT NULL,
+    availability BOOLEAN DEFAULT TRUE,
+    image_url TEXT
+);
+
+CREATE TABLE Orders (
+    order_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES Users(user_id) ON DELETE CASCADE, 
+    phone VARCHAR(15) NOT NULL,
+    address VARCHAR(250),
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE OrderItems (
+    order_item_id SERIAL PRIMARY KEY,
+    order_id INT NOT NULL REFERENCES Orders(order_id) ON DELETE CASCADE,
+    item_id INT NOT NULL REFERENCES MenuItems(item_id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE Chefs (
+    chef_id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    specialty VARCHAR(100),
+    bio TEXT,
+    image_url TEXT
+);
+
+
+CREATE TABLE Gallery (
+    image_id SERIAL PRIMARY KEY,
+    image_url VARCHAR(255) NOT NULL,
+    description TEXT,
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Features (
+    feature_id SERIAL PRIMARY KEY,
+    image_url TEXT NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL
+);
+
+CREATE TABLE Offers (
+    offer_id SERIAL PRIMARY KEY,
+    image_url TEXT NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    discount VARCHAR(20),
+    description TEXT
+);
+
+---Pl SQL
+
+-- Function to update availability when an item is ordered
+CREATE OR REPLACE FUNCTION update_item_availability() 
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Set item availability to false if it's not in any orders
+    UPDATE MenuItems 
+    SET availability = FALSE
+    WHERE item_id = NEW.item_id AND NOT EXISTS (
+        SELECT 1 FROM OrderItems oi
+        JOIN Orders o ON oi.order_id = o.order_id
+        WHERE oi.item_id = NEW.item_id AND o.order_date > CURRENT_TIMESTAMP - INTERVAL '30 days'
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to call the function after an item is added to an order
+CREATE TRIGGER after_order_item_insert
+AFTER INSERT ON OrderItems
+FOR EACH ROW
+EXECUTE FUNCTION update_item_availability();
+
+----stored procedure
+-- Procedure for placing an order
+CREATE OR REPLACE PROCEDURE place_order(
+    p_user_id INT,
+    p_phone VARCHAR(15),
+    p_address VARCHAR(250),
+    p_items INT[]
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_order_id INT;
+    v_item_id INT;
+BEGIN
+    -- Start a transaction block
+    BEGIN
+        -- Insert the order into Orders table
+        INSERT INTO Orders(user_id, phone, address)
+        VALUES (p_user_id, p_phone, p_address)
+        RETURNING order_id INTO v_order_id;
+
+        -- Insert each item into the OrderItems table
+        FOREACH v_item_id IN ARRAY p_items
+        LOOP
+            INSERT INTO OrderItems(order_id, item_id)
+            VALUES (v_order_id, v_item_id);
+        END LOOP;
+
+        -- Commit the transaction
+        COMMIT;
+    EXCEPTION
+        -- Rollback in case of any error
+        WHEN OTHERS THEN
+            ROLLBACK;
+            RAISE;
+    END;
+END;
+$$;
+
+----transaction
+BEGIN;
+
+CALL place_order(1, '1234567890', '123 Cafe St', ARRAY[3, 5]);
+
+COMMIT;
+
+
+
+
+
+--Insert DATA
+
+INSERT INTO Users (username, email, password_hash, is_admin)
+VALUES
+('Asna', 'asna@example.com', 'hashed_password', TRUE),
+('Alice Johnson', 'alice.johnson@example.com', 'hashed_password_1', FALSE),
+('Sophie Miller', 'sophie.miller@example.com', 'hashed_password_2', FALSE),
+('Emily Davis', 'emily.davis@example.com', 'hashed_password_3', FALSE),
+('Olivia Brown', 'olivia.brown@example.com', 'hashed_password_4', FALSE);
+
+
+INSERT INTO Features (image_url, title, description) VALUES
+('freeDelivery', 'Free Shipping', 'Enjoy free shipping on all orders with no minimum purchase required.'),
+('certified', 'Organic Certified', 'Our coffee beans are certified organic, ensuring high-quality and environmentally-friendly products.'),
+('coffee', 'High Quality', 'We source only the finest coffee beans from around the world, ensuring a rich and flavorful experience.'),
+('coffeeBeans', 'Proper Roasting', 'Our beans are roasted to perfection by experienced roasters to bring out the best flavor profiles.');
+
+INSERT INTO MenuItems (item_id, name, description, price, image_url) VALUES
+(1, 'Espresso', 'A classic espresso shot with rich, bold flavors and a velvety crema.', 3.00, 'menu1'),
+(2, 'Cappuccino', 'A perfect blend of espresso, steamed milk, and frothy foam for a creamy delight.', 4.00, 'menu2'),
+(3, 'Latte', 'Smooth and creamy, our latte combines espresso with steamed milk and a touch of foam.', 4.50, 'menu3'),
+(4, 'Americano', 'A strong and bold coffee made by diluting espresso with hot water.', 3.50, 'menu4'),
+(5, 'Mocha', 'A delicious mix of espresso, steamed milk, and rich chocolate syrup.', 5.00, 'menu5'),
+(6, 'Flat White', 'A balanced blend of espresso and velvety steamed milk with a thin layer of microfoam.', 4.25, 'menu6'),
+(7, 'Macchiato', 'A bold espresso with a dollop of steamed milk, creating a strong yet smooth flavor.', 3.75, 'menu7'),
+(8, 'Cold Brew', 'Smooth and refreshing, our cold brew is steeped for hours to extract the best flavors.', 4.00, 'menu8');
+
+INSERT INTO Gallery (image_url, description) VALUES
+('gallery1', 'Unique Macchiatos'),
+('gallery2', 'Latte Art Creations'),
+('gallery3', 'Signature Cappuccinos'),
+('gallery4', 'Delicious Mochas'),
+('gallery5', 'Perfect Flat Whites');
+
+INSERT INTO Offers (image_url, title, discount, description) VALUES
+('offer1', 'Summer Special', '20% Off', 'Enjoy a refreshing 20% discount on all iced coffees and cold brews this summer. Stay cool and caffeinated!'),
+('offer2', 'Buy One, Get One Free', 'BOGO', 'Buy any medium-sized coffee and get another one absolutely free. Bring a friend and share the joy of coffee!');
+
+INSERT INTO Chefs (chef_id, name, specialty, bio, image_url) VALUES 
+(1, 'Sophie Bennett', 'Latte Art Expert & Trainer', 'Specializes in latte art and trains others in the craft.', 'chef1'),
+(2, 'Jason Keller', 'Executive Pastry Chef', 'Expert in creating exquisite pastries with a flair for innovation.', 'chef2'),
+(3, 'Marco Ricci', 'Head Barista & Coffee Specialist', 'Renowned for his expertise in coffee brewing and barista techniques.', 'chef3'),
+(4, 'Emily Thompson', 'Dessert Chef & Coffee Connoisseur', 'Combines her love for desserts with her passion for coffee.', 'chef4');
+
+
+Remaining task:
+users.html or reservation.html
+add to cart 
+
+login 
+register 
+logout 
+profile
+
+form validation (neg value, >today date, time 9-6 only ) required feilds
+
+
+Requirements: 
+subqueries and JOINs
+Usage of advanced SQL features
+Built-in functions
+Transaction Handling
+
+PL/SQL
+Project should include triggers, functions, and procedures to handle data manipulation and validation.
+Proper use of PL/SQL to implement business logic and ensure data consistency.
+Error handling and exception management should be well-implemented.
+
+
+
+
+
+npm install bcrypt
+
+
+
+
+
+
