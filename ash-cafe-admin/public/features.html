@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Features</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px;
+        }
+        main {
+            margin: 20px;
+        }
+        form {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        table th {
+            background-color: #f8f8f8;
+        }
+        .action-buttons button {
+            padding: 5px 10px;
+            margin: 0 5px;
+        }
+        .update-btn {
+            background-color: #ffc107;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Manage Features</h1>
+    </header>
+
+    <main>
+        <!-- Form to create or update a feature -->
+        <section>
+            <h2 id="formTitle">Add New Feature</h2>
+            <form id="featureForm" enctype="multipart/form-data">
+                <input type="text" id="title" placeholder="Title" required>
+                <textarea id="description" placeholder="Description" rows="4" required></textarea>
+                <input type="file" id="image" accept="image/*" required>
+                <button type="submit">Add Feature</button>
+            </form>
+        </section>
+
+        <!-- Table to display features -->
+        <section>
+            <h2>All Features</h2>
+            <table id="featuresTable">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Image</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Features will be populated here -->
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <script>
+        const apiUrl = 'http://localhost:5000/api/features';  // Replace with your API URL
+        let editingFeatureId = null;
+
+        // Function to fetch all features
+        async function fetchFeatures() {
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                const tableBody = document.querySelector('#featuresTable tbody');
+                tableBody.innerHTML = '';  // Clear existing rows
+
+                const baseUrl = 'http://localhost:5000';  // Base URL for images
+
+                data.forEach(feature => {
+                    const imageUrl = feature.image_url ? `${baseUrl}${feature.image_url}` : 'default-image.jpg';  // Handle null or relative URLs
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${feature.title}</td>
+                        <td>${feature.description}</td>
+                        <td><img src="${imageUrl}" alt="Feature Image" width="100"></td>
+                        <td class="action-buttons">
+                            <button class="update-btn" onclick="editFeature(${feature.feature_id})">Edit</button>
+                            <button class="delete-btn" onclick="deleteFeature(${feature.feature_id})">Delete</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching features:', error);
+            }
+        }
+
+        // Function to add or update a feature
+        document.getElementById('featureForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('description', document.getElementById('description').value);
+
+            const imageFile = document.getElementById('image').files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
+            let response;
+            if (editingFeatureId) {
+                // Updating an existing feature
+                response = await fetch(`${apiUrl}/${editingFeatureId}`, {
+                    method: 'PUT',
+                    body: formData,
+                });
+                alert('Feature updated successfully');
+            } else {
+                // Adding a new feature
+                response = await fetch(apiUrl, {
+                    method: 'POST',
+                    body: formData,
+                });
+                alert('Feature added successfully');
+            }
+
+            if (response.ok) {
+                fetchFeatures();  // Refresh the features table
+                resetForm();  // Reset the form
+            } else {
+                const errorData = await response.json();
+                alert(`Failed to save feature: ${errorData.message}`);
+            }
+        });
+
+        // Function to edit a feature
+        function editFeature(id) {
+            editingFeatureId = id;
+            fetch(`${apiUrl}/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('title').value = data.title;
+                    document.getElementById('description').value = data.description;
+                    document.getElementById('formTitle').textContent = 'Edit Feature';
+                })
+                .catch(error => {
+                    console.error('Error fetching feature for editing:', error);
+                });
+        }
+
+        // Function to delete a feature
+        async function deleteFeature(id) {
+            const confirmDelete = confirm('Are you sure you want to delete this feature?');
+            if (confirmDelete) {
+                try {
+                    const response = await fetch(`${apiUrl}/${id}`, {
+                        method: 'DELETE',
+                    });
+
+                    if (response.ok) {
+                        alert('Feature deleted successfully');
+                        fetchFeatures();  // Refresh the features table
+                    } else {
+                        alert('Failed to delete feature');
+                    }
+                } catch (error) {
+                    console.error('Error deleting feature:', error);
+                    alert('An error occurred');
+                }
+            }
+        }
+
+        // Function to reset the form
+        function resetForm() {
+            document.getElementById('featureForm').reset();
+            document.getElementById('formTitle').textContent = 'Add New Feature';
+            editingFeatureId = null;
+        }
+
+        // Fetch features on page load
+        window.onload = fetchFeatures;
+    </script>
+</body>
+</html>

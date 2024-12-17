@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 1em;
+        }
+
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        nav ul li {
+            display: inline;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5em;
+            font-size: 16px;
+        }
+
+        nav ul li a:hover, .active {
+            background-color: #444;
+            border-radius: 4px;
+        }
+
+        main {
+            padding: 2em;
+            text-align: center;
+        }
+
+        /* Styling for the dashboard section */
+        .dashboard {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .admin-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px; 
+            justify-items: center;
+            margin-top: 30px;
+        }
+
+        .section-card {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .section-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .section-card p {
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .section-card a.btn {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .section-card a.btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .admin-sections {
+                grid-template-columns: 1fr 1fr; /* Two columns for smaller screens */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-sections {
+                grid-template-columns: 1fr; /* Single column for very small screens */
+            }
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        /* Ensure the body takes up full height and uses flexbox */
+        html, body {
+            height: 100%; /* Full height */
+            margin: 0;    /* Remove default margin */
+            display: flex; /* Use Flexbox layout */
+            flex-direction: column; /* Stack content vertically */
+        }
+        /* Main content should grow to fill the available space */
+        main {
+            flex: 1; /* Takes up remaining space */
+        }
+
+        /* Styling for the footer */
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 1rem;
+            position: relative;
+            width: 100%;
+            margin-top: auto; /* Pushes the footer to the bottom */
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Navigation bar -->
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html" class="active">Dashboard</a></li>
+                <li><a href="offer.html">Manage Offers</a></li>
+                <li><a href="users.html">Manage Users</a></li>
+                <li><a href="chefs.html">Manage Chefs</a></li>
+                <li><a href="features.html">Manage Features</a></li>
+                <li><a href="gallery.html">Manage Gallery</a></li>
+                <li><a href="menu.html">Manage Menu</a></li>
+                <li><a href="orders.html">Manage Orders</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main content area -->
+    <main>
+        <section class="dashboard">
+            <h1>Welcome to ASH-Cafe Admin Portal</h1>
+            
+            <div class="admin-sections">
+                <div class="section-card">
+                    <h3>Manage Offers</h3>
+                    <p>View, create, update, or delete offers.</p>
+                    <a href="offer.html" class="btn">Go to Offers</a>
+                </div>
+                <div class="section-card">
+                    <h3>Manage Users</h3>
+                    <p>View user accounts and roles.</p>
+                    <a href="users.html" class="btn">Go to Users</a>
+                </div>
+                <div class="section-card">
+                    <h3>Manage Chefs</h3>
+                    <p>View, add, or edit chef profiles and details.</p>
+                    <a href="chefs.html" class="btn">Go to Chefs</a>
+                </div>
+                <div class="section-card">
+                    <h3>Manage Features</h3>
+                    <p>Update features and services available to users.</p>
+                    <a href="features.html" class="btn">Go to Features</a>
+                </div>
+                <div class="section-card">
+                    <h3>Manage Gallery</h3>
+                    <p>Upload, view, or manage images in the gallery.</p>
+                    <a href="gallery.html" class="btn">Go to Gallery</a>
+                </div>
+                <div class="section-card">
+                    <h3>Manage Menu</h3>
+                    <p>View, add, or update menu items for your platform.</p>
+                    <a href="menu.html" class="btn">Go to Menu</a>
+                </div>
+                <div class="section-card">
+                    <h3>Manage Orders</h3>
+                    <p>View Orders and detailed information.</p>
+                    <a href="orders.html" class="btn">Go to Orders</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 ASH-Cafe Admin Portal. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
